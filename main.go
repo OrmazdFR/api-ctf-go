@@ -12,7 +12,9 @@ import (
 )
 
 const (
-	apiURL = "34.77.36.161"
+	apiURL    = "34.77.36.161"
+	finalPort = "3610"
+	finalKey  = "8116fdd3f12b6d7c4b136cbdaa3360a57eb4eb676ae63294450ee1f4f34b36f3"
 )
 
 func main() {
@@ -28,8 +30,33 @@ func main() {
 	wg.Wait()
 	close(resultChan)
 
-	var firstSecret = strings.Trim(<-resultChan, " ")
+	var firstSecret = <-resultChan
 	postSecret(firstSecret)
+
+	lastApi()
+}
+
+func lastApi() {
+	myUrl := "http://" + apiURL + ":" + finalPort
+	data := url.Values{
+		"finalKey": {finalKey},
+	}
+
+	resp, err := http.PostForm(myUrl, data)
+	if err != nil {
+		fmt.Printf("Error POSTing : %v\n", err)
+		return
+	}
+	if resp.Body == nil {
+		fmt.Println("resp body nil")
+		return
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(string(body))
 }
 
 func postSecret(secretStr string) {
@@ -53,6 +80,7 @@ func postSecret(secretStr string) {
 		log.Fatal(err)
 	}
 	fmt.Println(string(body))
+	return
 }
 
 func pingUrl(port int, resultChan chan<- string, wg *sync.WaitGroup) {
@@ -73,6 +101,6 @@ func pingUrl(port int, resultChan chan<- string, wg *sync.WaitGroup) {
 		log.Fatal(err)
 	}
 	var secretKey = strings.Split(string(body), "The secret key is: ")[1]
-	resultChan <- secretKey
+	resultChan <- strings.Trim(secretKey, " ")
 	wg.Done()
 }
