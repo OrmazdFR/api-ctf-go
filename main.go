@@ -29,7 +29,7 @@ func main() {
 	close(resultChan)
 
 	var firstSecret = <-resultChan
-	postSecret(firstSecret)
+	postSecondSecretAndGetLink(firstSecret)
 
 	lastApi()
 }
@@ -55,28 +55,4 @@ func lastApi() {
 		log.Fatal(err)
 	}
 	fmt.Println(string(body))
-}
-
-func postSecret(secretStr string) {
-	myUrl := "http://" + apiURL + ":3941"
-	data := url.Values{
-		"secretKey": {secretStr},
-	}
-
-	resp, err := http.PostForm(myUrl, data)
-	if err != nil {
-		fmt.Printf("Error POSTing : %v\n", err)
-		return
-	}
-	if resp.Body == nil {
-		fmt.Println("resp body nil")
-		return
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(string(body))
-	return
 }
