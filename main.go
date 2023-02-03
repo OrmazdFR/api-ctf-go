@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -23,11 +24,37 @@ func main() {
 		wg.Add(1)
 		go pingUrl(port, resultChan, &wg)
 	}
+
 	wg.Wait()
 	close(resultChan)
 
-	fmt.Println(<-resultChan)
+	var firstSecret = strings.Trim(<-resultChan, " ")
+	postSecret(firstSecret)
 }
+
+func postSecret(secretStr string) {
+	myUrl := "http://" + apiURL + ":3941"
+	data := url.Values{
+		"secretKey": {secretStr},
+	}
+
+	resp, err := http.PostForm(myUrl, data)
+	if err != nil {
+		fmt.Printf("Error POSTing : %v\n", err)
+		return
+	}
+	if resp.Body == nil {
+		fmt.Println("resp body nil")
+		return
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(string(body))
+}
+
 func pingUrl(port int, resultChan chan<- string, wg *sync.WaitGroup) {
 	url := "http://" + apiURL + ":" + strconv.Itoa(port)
 	resp, err := http.Get(url)
