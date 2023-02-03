@@ -6,8 +6,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -24,7 +22,7 @@ func main() {
 	fmt.Println("Let's go API")
 	for port := 3000; port < 4001; port++ {
 		wg.Add(1)
-		go pingUrl(port, resultChan, &wg)
+		go getFirstSecret(port, resultChan, &wg)
 	}
 
 	wg.Wait()
@@ -81,26 +79,4 @@ func postSecret(secretStr string) {
 	}
 	fmt.Println(string(body))
 	return
-}
-
-func pingUrl(port int, resultChan chan<- string, wg *sync.WaitGroup) {
-	url := "http://" + apiURL + ":" + strconv.Itoa(port)
-	resp, err := http.Get(url)
-	if err != nil {
-		// fmt.Printf("Error GETting %d: %v\n", port, err)
-		wg.Done()
-		return
-	}
-	if resp.Body == nil {
-		wg.Done()
-		return
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var secretKey = strings.Split(string(body), "The secret key is: ")[1]
-	resultChan <- strings.Trim(secretKey, " ")
-	wg.Done()
 }
